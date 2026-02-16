@@ -1,16 +1,12 @@
 package ru.kata.spring.boot_security.demo.services;
 
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.dao.UserDao;
-import ru.kata.spring.boot_security.demo.entities.Role;
 import ru.kata.spring.boot_security.demo.entities.User;
 
-
-import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -22,7 +18,6 @@ public class UserServiceImpl implements UserService {
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
 
-
     public UserServiceImpl(UserDao userDao,
                            RoleService roleService,
                            PasswordEncoder passwordEncoder) {
@@ -33,80 +28,189 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void createUser(User user, Set<Long> roleIds) {
-        // Проверка на существование
-        if (findByUsername(user.getUsername()) != null) {
-            log.error("User with name {} already exists", user.getUsername());
-            throw new IllegalArgumentException("Username already exists: " + user.getUsername());
-        }
+    public User createUser(User user, Set<Long> roleIds) {
+        log.info("Creating user with email: {}", user.getEmail());
 
-        // Шифруем пароль
+        // 1. Validation
+        validateUserData(user);
+        checkEmailUniqueness(user.getEmail(), null);
+
+        // 2. Password encryption
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
-        // ✅ Получаем роли через getRoleById в цикле
-        Set<Role> roles = new HashSet<>();
-        for (Long roleId : roleIds) {
-            Role role = roleService.getRoleById(roleId);  // ← используем существующий метод!
-            roles.add(role);
-            log.debug("Added role: {} to user", role.getName());
+        // 3. Getting roles
+        if (roleIds != null && !roleIds.isEmpty()) {
+            user.setRoles(roleService.getRolesByIds(roleIds));
         }
 
-        user.setRoles(roles);
-        userDao.createUser(user);
-        log.info("User created: {}", user.getUsername());
+        // 4. Save
+        User savedUser = userDao.createUser(user);
+        log.info("User successfully created: {} {} (id: {})",
+                savedUser.getFirstName(), savedUser.getLastName(), savedUser.getId());
+
+        return savedUser;
     }
 
     @Override
     @Transactional(readOnly = true)
     public User getUserById(Long id) {
+        log.debug("Searching user by id: {}", id);
+
+        validateId(id);
+
         return userDao.getById(id)
                 .orElseThrow(() -> {
-                    log.error("User not found with id: {}", id);
-                    return new IllegalArgumentException("User not found with id: " + id);
+                    log.error("User with id {} not found", id);
+                    return new IllegalArgumentException("User with id " + id + " not found");
                 });
     }
 
     @Override
     @Transactional(readOnly = true)
     public List<User> getAllUsers() {
+        log.debug("Getting all users list");
         return userDao.getAll();
     }
 
     @Override
     @Transactional
     public void updateUser(User user, Set<Long> roleIds) {
+        log.info("Updating user with id: {}", user.getId());
+
+        validateId(user.getId());
+
+        // 1. Check existence
         User existingUser = getUserById(user.getId());
 
-        existingUser.setUsername(user.getUsername());
-        existingUser.setEmail(user.getEmail());
+        // 2. Email check (if changed)
+        if (isEmailChanged(existingUser, user.getEmail())) {
+            checkEmailUniqueness(user.getEmail(), user.getId());
+            existingUser.setEmail(user.getEmail());
+        }
 
+        // 3. Update fields
+        if (user.getFirstName() != null) {
+            existingUser.setFirstName(user.getFirstName());
+        }
+        if (user.getLastName() != null) {
+            existingUser.setLastName(user.getLastName());
+        }
+        if (user.getAge() != null) {
+            existingUser.setAge(user.getAge());
+        }
+
+        // 4. Password update
         if (user.getPassword() != null && !user.getPassword().isEmpty()) {
             existingUser.setPassword(passwordEncoder.encode(user.getPassword()));
+            log.debug("Password updated for user: {}", user.getEmail());
         }
 
-        // ✅ Тот же подход для обновления
-        Set<Role> roles = new HashSet<>();
-        for (Long roleId : roleIds) {
-            Role role = roleService.getRoleById(roleId);  // ← используем существующий метод!
-            roles.add(role);
+        // 5. Roles update
+        if (roleIds != null) {
+            existingUser.setRoles(roleService.getRolesByIds(roleIds));
+            log.debug("Roles updated for user: {}", user.getEmail());
         }
 
-        existingUser.setRoles(roles);
-        userDao.update(existingUser);
-        log.info("User updated: {}", user.getUsername());
+        // 6. Save
+        User updatedUser = userDao.update(existingUser);
+        log.info("User successfully updated: {} {} (id: {})",
+                updatedUser.getFirstName(), updatedUser.getLastName(), updatedUser.getId());
+
     }
 
     @Override
     @Transactional
     public void deleteUser(Long id) {
-        User user = getUserById(id);
+        log.info("Deleting user with id: {}", id);
+
+        validateId(id);
+
+        if (userDao.getById(id).isEmpty()) {
+            log.error("User with id {} not found", id);
+            throw new IllegalArgumentException("User with id " + id + " not found");
+        }
+
         userDao.delete(id);
-        log.info("User deleted: {} (id: {})", user.getUsername(), id);
+        log.info("User with id {} successfully deleted", id);
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public User findByUsername(String username) {
-        return userDao.findByUsername(username).orElse(null);
+    public User findByEmail(String email) {
+        log.debug("Searching user by email: {}", email);
+
+        if (email == null || email.trim().isEmpty()) {
+            log.warn("Search with empty email");
+            return null;
+        }
+
+        return userDao.findByEmail(email).orElse(null);
     }
+
+    @Override
+    public List<User> getUsersByRole(String role) {
+        log.debug("Getting users with role: {}", role);
+        String roleName = "ROLE_" + role;
+        return userDao.findByRole(roleName);
+    }
+
+    // ========== HELPER METHODS ==========
+
+    /**
+     * Validates user data before creation
+     */
+    private void validateUserData(User user) {
+        if (user == null) {
+            throw new IllegalArgumentException("User object cannot be null");
+        }
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new IllegalArgumentException("Email cannot be empty");
+        }
+        if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
+            throw new IllegalArgumentException("Password cannot be empty");
+        }
+        if (user.getFirstName() == null || user.getFirstName().trim().isEmpty()) {
+            throw new IllegalArgumentException("First name cannot be empty");
+        }
+        if (user.getLastName() == null || user.getLastName().trim().isEmpty()) {
+            throw new IllegalArgumentException("Last name cannot be empty");
+        }
+        if (user.getAge() == null || user.getAge() <= 0) {
+            throw new IllegalArgumentException("Age must be positive");
+        }
+    }
+
+    /**
+     * Validates user ID
+     */
+    private void validateId(Long id) {
+        if (id == null) {
+            throw new IllegalArgumentException("ID cannot be null");
+        }
+        if (id <= 0) {
+            throw new IllegalArgumentException("ID must be positive");
+        }
+    }
+
+    /**
+     * Checks if email is unique
+     * @param email email to check
+     * @param currentUserId current user ID (null for creation)
+     */
+    private void checkEmailUniqueness(String email, Long currentUserId) {
+        userDao.findByEmail(email).ifPresent(existingUser -> {
+            if (!existingUser.getId().equals(currentUserId)) {
+                log.warn("Email already in use: {}", email);
+                throw new IllegalArgumentException("Email " + email + " already registered");
+            }
+        });
+    }
+
+    /**
+     * Checks if email has changed
+     */
+    private boolean isEmailChanged(User existingUser, String newEmail) {
+        return newEmail != null && !newEmail.equals(existingUser.getEmail());
+    }
+
+
 }

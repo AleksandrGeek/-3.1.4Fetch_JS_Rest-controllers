@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Optional;
 
 
+
 @Repository
 public class RoleDaoImpl implements RoleDao {
 
@@ -45,4 +46,9 @@ public class RoleDaoImpl implements RoleDao {
     public void save(Role role) {
         entityManager.persist(role);
     }
+
+
 }
+
+
+

@@ -1,5 +1,6 @@
 package ru.kata.spring.boot_security.demo.controller;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -16,8 +17,11 @@ import ru.kata.spring.boot_security.demo.services.RoleService;
 import ru.kata.spring.boot_security.demo.services.UserService;
 
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 
+
+@Slf4j
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
@@ -33,13 +37,27 @@ public class AdminController {
     }
 
     @GetMapping
-    public String adminPage(@AuthenticationPrincipal User user, Model model) {
+    public String adminPage(@AuthenticationPrincipal User user,
+                            @RequestParam(required = false) String role,
+                            Model model) {
+
+        // Получаем пользователей в зависимости от выбранной роли
+        List<User> users;
+        if (role == null || role.equals("ALL")) {
+            users = userService.getAllUsers();
+        } else {
+            users = userService.getUsersByRole(role);
+        }
+
+        model.addAttribute("users", users);
         model.addAttribute("user", user);
-        model.addAttribute("users", userService.getAllUsers());
+        model.addAttribute("selectedRole", role);
+        model.addAttribute("allRoles", roleService.getAllRoles());
+
         return "admin";
     }
 
-    // CRUD операции - только для админа
+    // ✅ CRUD операции
     @GetMapping("/new")
     public String newUser(Model model) {
         model.addAttribute("user", new User());
@@ -50,8 +68,8 @@ public class AdminController {
     @PostMapping("/create")
     public String createUser(@ModelAttribute User user,
                              @RequestParam(required = false) Set<Long> roleIds) {
-        if (roleIds == null) roleIds = new HashSet<>();
-        userService.createUser(user, roleIds);
+        User createdUser = userService.createUser(user, roleIds);
+        log.info("Создан пользователь с id: {}", createdUser.getId());
         return "redirect:/admin";
     }
 

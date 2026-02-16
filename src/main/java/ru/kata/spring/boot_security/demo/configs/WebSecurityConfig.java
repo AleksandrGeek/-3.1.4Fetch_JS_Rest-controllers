@@ -46,16 +46,16 @@ public class WebSecurityConfig extends WebSecurityConfigurerAdapter {
     protected void configure(HttpSecurity http) throws Exception {
         http
                 .authorizeRequests()
-                .antMatchers("/","/index", "/login").permitAll()
-                .antMatchers("/admin/**").hasRole("ADMIN")           // Пункт 4
-                .antMatchers("/user/**").hasAnyRole("USER", "ADMIN") // Пункт 5
+                .antMatchers("/", "/index", "/login").permitAll()
+                .antMatchers("/admin/**").hasRole("ADMIN")
+                .antMatchers("/user/**").hasAnyRole("USER", "ADMIN")
                 .antMatchers("/test").permitAll()
                 .antMatchers("/test-secure").authenticated()
                 .anyRequest().authenticated()
                 .and()
                 .formLogin()
                 .loginPage("/login")
-                .successHandler(successUserHandler) // Пункт 7
+                .successHandler(successUserHandler)
                 .permitAll()
                 .and()
                 .logout()

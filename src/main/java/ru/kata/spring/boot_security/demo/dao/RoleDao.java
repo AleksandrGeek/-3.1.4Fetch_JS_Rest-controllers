@@ -5,6 +5,7 @@ import ru.kata.spring.boot_security.demo.entities.Role;
 import java.util.List;
 import java.util.Optional;
 
+
 public interface RoleDao {
     List<Role> getAllRoles();
 
@@ -13,6 +14,4 @@ public interface RoleDao {
     Optional<Role> findByName(String name);
 
     void save(Role role);
-
-
 }

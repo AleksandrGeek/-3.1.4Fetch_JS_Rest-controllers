@@ -1,7 +1,11 @@
 package ru.kata.spring.boot_security.demo.entities;
 
 
-import lombok.*;
+
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -21,7 +25,6 @@ import java.util.Objects;
 import java.util.Set;
 
 
-
 @NoArgsConstructor
 @Entity
 @Table(name = "users")
@@ -34,19 +37,21 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    @Column(name = "first_name", unique = true, nullable = false)
+    private String firstName;
+
+    @Column(name = "last_name", unique = true, nullable = false)
+    private String lastName;
+
+    private Integer age;
+
     @Column(unique = true, nullable = false)
-    private String username;
+    private String email;
 
     @Column(nullable = false)
     private String password;
 
-    @Column(nullable = false)
-    private String email;
-
-
     @ManyToMany(fetch = FetchType.EAGER)
-
-
     @JoinTable(name = "users_roles",
             //user_id → ссылка на users.id
             joinColumns = @JoinColumn(name = "user_id"),
@@ -57,17 +62,20 @@ public class User implements UserDetails {
     private Set<Role> roles = new HashSet<>();
 
 
-    public User(String username, String password, String email) {
-        this.username = username;
-        this.password = password;
+    public User(String firstName, String lastName, Integer age, String email, String password) {
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.age = age;
         this.email = email;
+        this.password = password;
+
     }
 
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
-        if(!(o instanceof User user)) return false;
+        if (!(o instanceof User user)) return false;
         return id != null && Objects.equals(id, user.id);
     }
 
@@ -79,6 +87,11 @@ public class User implements UserDetails {
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
         return roles;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
     }
 
     @Override

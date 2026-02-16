@@ -8,7 +8,8 @@ import java.util.Set;
 
 public interface UserService {
 
-    void createUser(User user, Set<Long> roleIds);
+
+    User createUser(User user, Set<Long> roleIds);
 
     User getUserById(Long id);
 
@@ -18,7 +19,8 @@ public interface UserService {
 
     void deleteUser(Long id);
 
-    User findByUsername(String username);
+    User findByEmail(String email);
 
-
+    List<User> getUsersByRole(String role);
 }
+

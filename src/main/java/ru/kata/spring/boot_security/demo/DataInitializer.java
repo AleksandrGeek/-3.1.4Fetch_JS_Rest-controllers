@@ -16,8 +16,10 @@ import java.util.Set;
 @Component
 public class DataInitializer {
 
-    private final UserService userService;    // ✅ Только сервисы
-    private final RoleService roleService;    // ✅ Только сервисы
+
+    // ✅ сервисы
+    private final UserService userService;
+    private final RoleService roleService;
 
     public DataInitializer(UserService userService, RoleService roleService) {
         this.userService = userService;
@@ -29,41 +31,47 @@ public class DataInitializer {
     public void init() {
         log.info("=== STARTING DATA INITIALIZATION ===");
 
+
         // 1. Создаем роли через RoleService
         Role adminRole = createRoleIfNotExists("ROLE_ADMIN");
         Role userRole = createRoleIfNotExists("ROLE_USER");
         log.info("✅ Roles ready: ADMIN, USER");
 
         // 2. Создаем админа через UserService (пароль передаем сырой!)
-        if (userService.findByUsername("admin") == null) {
+        if (userService.findByEmail("admin@test.com") == null) {
             User admin = new User();
-            admin.setUsername("admin");
-            admin.setPassword("admin");           // ✅ СЫРОЙ пароль!
+            admin.setFirstName("Admin");
+            admin.setLastName("Adminov");
+            admin.setAge(30);
             admin.setEmail("admin@test.com");
+            admin.setPassword("admin");
 
             userService.createUser(admin, Set.of(adminRole.getId(), userRole.getId()));
             log.info("Admin user created: {} (id: {})", admin.getUsername(), admin.getId());
         }
 
         // 3. Создаем пользователя через UserService
-        if (userService.findByUsername("user") == null) {
+        if (userService.findByEmail("user@test.com") == null) {
             User user = new User();
-            user.setUsername("user");
-            user.setPassword("user");             // ✅ СЫРОЙ пароль!
+            user.setFirstName("user");
+            user.setLastName("Userov");
+            user.setAge(25);
             user.setEmail("user@test.com");
+            user.setPassword("user");
 
             userService.createUser(user, Set.of(userRole.getId()));
             log.info("Regular user created: {} (id: {})", user.getUsername(), user.getId());
         }
 
-        System.out.println("=== DATA INITIALIZATION COMPLETE ===");
+        log.info("=== DATA INITIALIZATION COMPLETE ===");
+
+
     }
 
     private Role createRoleIfNotExists(String roleName) {
         try {
             return roleService.findByName(roleName);
         } catch (Exception e) {
-            // Добавьте метод createRole в RoleService
             return roleService.createRole(roleName);
         }
     }

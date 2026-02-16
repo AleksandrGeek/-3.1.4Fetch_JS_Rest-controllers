@@ -8,18 +8,16 @@ import java.util.Optional;
 
 
 public interface UserDao {
+User createUser(User user);
 
-    void createUser(User user);
+Optional<User> getById(Long id);
+List<User> getAll();
 
-    Optional<User> getById(Long id);
+// ✅ Возвращаем обновленного пользователя
+User update(User user);
 
-    List<User> getAll();
+void delete(Long id);
+Optional<User> findByEmail(String email);
 
-    void update(User user);
-
-    void delete(Long id);
-
-    Optional<User> findByUsername(String username);
-
-
+    List<User> findByRole(String roleName);
 }
