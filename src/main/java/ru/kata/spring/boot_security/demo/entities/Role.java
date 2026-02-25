@@ -8,20 +8,23 @@ import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 
 import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Id;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
 import javax.persistence.Column;
+import javax.persistence.ManyToMany;
+import javax.persistence.Id;
+import javax.persistence.Table;
+import java.util.HashSet;
 import java.util.Objects;
+import java.util.Set;
 
 
+@Entity
+@Table(name = "roles")
 @NoArgsConstructor
 @Getter
 @Setter
-@ToString
-@Entity
-@Table(name = "roles")
+@ToString(exclude = "users")  // ← обязательно исключить!
 public class Role implements GrantedAuthority {
 
     @Id
@@ -31,6 +34,9 @@ public class Role implements GrantedAuthority {
     @Column(unique = true, nullable = false)
     private String name;
 
+    // ✅ Добавляем обратную связь
+    @ManyToMany(mappedBy = "roles")  // ссылается на поле roles в классе User
+    private Set<User> users = new HashSet<>();
 
     public Role(String name) {
         this.name = name;
@@ -54,3 +60,4 @@ public class Role implements GrantedAuthority {
         return Objects.hash(id);
     }
 }
+

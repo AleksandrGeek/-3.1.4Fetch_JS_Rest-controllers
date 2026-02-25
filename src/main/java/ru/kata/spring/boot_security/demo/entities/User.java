@@ -1,7 +1,6 @@
 package ru.kata.spring.boot_security.demo.entities;
 
 
-
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -9,16 +8,7 @@ import lombok.ToString;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Id;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Column;
-import javax.persistence.ManyToMany;
-import javax.persistence.JoinTable;
-import javax.persistence.FetchType;
-import javax.persistence.JoinColumn;
+import javax.persistence.*;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Objects;
@@ -51,7 +41,8 @@ public class User implements UserDetails {
     @Column(nullable = false)
     private String password;
 
-    @ManyToMany(fetch = FetchType.EAGER)
+    @ManyToMany(fetch = FetchType.LAZY,
+    cascade = {CascadeType.PERSIST, CascadeType.MERGE})
     @JoinTable(name = "users_roles",
             //user_id → ссылка на users.id
             joinColumns = @JoinColumn(name = "user_id"),
