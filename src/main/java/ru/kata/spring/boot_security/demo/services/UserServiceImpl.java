@@ -30,6 +30,10 @@ public class UserServiceImpl implements UserService {
         this.passwordEncoder = passwordEncoder;
     }
 
+
+
+
+
     @Override
     @Transactional
     public User createUser(User user, Set<Long> roleIds) {
@@ -152,6 +156,12 @@ public class UserServiceImpl implements UserService {
         return userDao.findByEmail(email).orElse(null);
     }
 
+    @Override
+    public List<User> getUsersByRole(String role) {
+        log.debug("Getting users with role: {}", role);
+        String roleName = "ROLE_" + role;  // ADMIN → ROLE_ADMIN
+        return userDao.findByRole(roleName);
+    }
 
     // ========== HELPER METHODS ==========
 

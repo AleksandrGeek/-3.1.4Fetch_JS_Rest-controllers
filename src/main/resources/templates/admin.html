@@ -19,6 +19,15 @@
             border-radius: 0;
         }
 
+        /* ✅ Добавить эти стили для подсветки */
+        .sidebar .nav-link.active {
+            background-color: #007bff;
+            color: white;
+        }
+
+        .sidebar .nav-link.active:hover {
+            background-color: #0056b3;
+        }
 
         .main-content {
             padding: 20px;
@@ -130,6 +139,7 @@
 </div>
 
 <!-- Модальное окно для создания/редактирования пользователя -->
+<!-- Модальное окно для создания/редактирования пользователя -->
 <div class="modal fade" id="userModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
@@ -140,35 +150,41 @@
             <div class="modal-body">
                 <form id="userForm">
                     <input type="hidden" id="userId">
+
                     <div class="mb-3">
-                        <label class="form-label">First Name</label>
-                        <label for="firstName"></label><input type="text" class="form-control" id="firstName" required>
+                        <label for="firstName" class="form-label">First Name</label>
+                        <input type="text" class="form-control" id="firstName" required>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label">Last Name</label>
-                        <label for="lastName"></label><input type="text" class="form-control" id="lastName" required>
+                        <label for="lastName" class="form-label">Last Name</label>
+                        <input type="text" class="form-control" id="lastName" required>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label">Age</label>
-                        <label for="age"></label><input type="number" class="form-control" id="age" required>
+                        <label for="age" class="form-label">Age</label>
+                        <input type="number" class="form-control" id="age" required>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label">Email</label>
-                        <label for="email"></label><input type="email" class="form-control" id="email" required>
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
                     </div>
+
                     <div class="mb-3">
-                        <label class="form-label">Password</label>
-                        <label for="password"></label><input type="password" class="form-control" id="password">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password">
                     </div>
+
                     <div class="mb-3">
                         <label class="form-label">Roles</label>
                         <div class="form-check">
-                            <label for="roleAdmin"></label><input class="form-check-input" type="checkbox" value="1" id="roleAdmin">
-                            <label class="form-check-label">ADMIN</label>
+                            <input class="form-check-input" type="checkbox" value="1" id="roleAdmin">
+                            <label class="form-check-label" for="roleAdmin">ADMIN</label>
                         </div>
                         <div class="form-check">
-                            <label for="roleUser"></label><input class="form-check-input" type="checkbox" value="2" id="roleUser">
-                            <label class="form-check-label">USER</label>
+                            <input class="form-check-input" type="checkbox" value="2" id="roleUser">
+                            <label class="form-check-label" for="roleUser">USER</label>
                         </div>
                     </div>
                 </form>

@@ -1,5 +1,6 @@
 package ru.kata.spring.boot_security.demo.dao;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Repository;
 import ru.kata.spring.boot_security.demo.entities.User;
 
@@ -10,6 +11,7 @@ import javax.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Repository
 public class UserDaoImpl implements UserDao {
 
@@ -70,4 +72,6 @@ public class UserDaoImpl implements UserDao {
         query.setParameter("roleName", roleName);
         return query.getResultList();
     }
+
+
 }

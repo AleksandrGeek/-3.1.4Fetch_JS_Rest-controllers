@@ -22,9 +22,19 @@ public class AdminRestController {
         this.userService = userService;
     }
 
+    //Боковая панель, сортировка по ролям(Admin/User)
     @GetMapping
-    public ResponseEntity<List<User>> getAllUsers() {
-        return ResponseEntity.ok(userService.getAllUsers());
+    public ResponseEntity<List<User>> getAllUsers(
+            @RequestParam(required = false) String role) {
+
+        List<User> users;
+        if (role == null) {
+            users = userService.getAllUsers();
+        } else {
+            users = userService.getUsersByRole(role);  // ← вызов сервиса
+        }
+
+        return ResponseEntity.ok(users);
     }
 
     // GET /api/users/5 - получить одного
