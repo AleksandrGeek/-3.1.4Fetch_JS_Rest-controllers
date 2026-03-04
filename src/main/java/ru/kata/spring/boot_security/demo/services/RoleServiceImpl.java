@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.dao.RoleDao;
 import ru.kata.spring.boot_security.demo.entities.Role;
+import ru.kata.spring.boot_security.demo.exception.role.RoleNotFoundException;
 
 import java.util.HashSet;
 import java.util.List;
@@ -33,7 +34,7 @@ public class RoleServiceImpl implements RoleService {
         return roleDao.getRoleById(id)
                 .orElseThrow(() -> {
                     log.error("Role not found with id: {}", id);  // ✅ Только ошибка!
-                    return new IllegalArgumentException("Role not found with id: " + id);
+                   return new RoleNotFoundException(id);
                 });
     }
 
@@ -42,8 +43,8 @@ public class RoleServiceImpl implements RoleService {
     public Role findByName(String name) {
         return roleDao.findByName(name)
                 .orElseThrow(() -> {
-                    log.error("Role not found with name: {}", name);  // ✅ Только ошибка!
-                    return new IllegalArgumentException("Role not found with name: " + name);
+                    log.error("Role not found with name: {}", name);
+                    return new RoleNotFoundException(name);
                 });
     }
 
@@ -82,7 +83,7 @@ public class RoleServiceImpl implements RoleService {
 
         if (!notFoundIds.isEmpty()) {
             log.error("Role not Found with ids: {}", notFoundIds);
-            throw new IllegalArgumentException("Role not found: " + notFoundIds);
+            throw new RoleNotFoundException(notFoundIds);
         }
         return roles;
     }

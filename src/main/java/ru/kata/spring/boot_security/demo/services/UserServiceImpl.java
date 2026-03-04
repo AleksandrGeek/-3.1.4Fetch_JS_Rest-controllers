@@ -6,6 +6,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.kata.spring.boot_security.demo.dao.UserDao;
 import ru.kata.spring.boot_security.demo.entities.User;
+import ru.kata.spring.boot_security.demo.exception.user.DuplicatedEmailException;
+import ru.kata.spring.boot_security.demo.exception.user.EmptyEmailException;
+import ru.kata.spring.boot_security.demo.exception.user.UserNotFoundException;
+import ru.kata.spring.boot_security.demo.exception.user.ValidationException;
 
 import java.util.List;
 import java.util.Set;
@@ -31,11 +35,18 @@ public class UserServiceImpl implements UserService {
     public User createUser(User user, Set<Long> roleIds) {
         log.info("Creating user with email: {}", user.getEmail());
 
-        // 1. Validation
-        validateUserData(user);
-        checkEmailUniqueness(user.getEmail(), null);
+        // 1. Проверка email
+        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
+            throw new EmptyEmailException();
+        }
+        //2. Проверка на дубликат
+        if (findByEmail(user.getEmail()) != null ) {
+            throw new DuplicatedEmailException(user.getEmail());
+        }
 
-        // 2. Password encryption
+        validateUserData(user);
+
+        // 4. Password encryption
         user.setPassword(passwordEncoder.encode(user.getPassword()));
 
         // 3. Getting roles
@@ -54,15 +65,10 @@ public class UserServiceImpl implements UserService {
     @Override
     @Transactional(readOnly = true)
     public User getUserById(Long id) {
-        log.debug("Searching user by id: {}", id);
-
         validateId(id);
-
         return userDao.getById(id)
-                .orElseThrow(() -> {
-                    log.error("User with id {} not found", id);
-                    return new IllegalArgumentException("User with id " + id + " not found");
-                });
+                .orElseThrow(() -> new UserNotFoundException(id));
+
     }
 
     @Override
@@ -74,7 +80,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     @Transactional
-    public void updateUser(User user, Set<Long> roleIds) {
+    public User updateUser(User user, Set<Long> roleIds) {
         log.info("Updating user with id: {}", user.getId());
 
         validateId(user.getId());
@@ -115,7 +121,7 @@ public class UserServiceImpl implements UserService {
         User updatedUser = userDao.update(existingUser);
         log.info("User successfully updated: {} {} (id: {})",
                 updatedUser.getFirstName(), updatedUser.getLastName(), updatedUser.getId());
-
+        return updatedUser;
     }
 
     @Override
@@ -127,7 +133,7 @@ public class UserServiceImpl implements UserService {
 
         if (userDao.getById(id).isEmpty()) {
             log.error("User with id {} not found", id);
-            throw new IllegalArgumentException("User with id " + id + " not found");
+            throw new UserNotFoundException(id);
         }
 
         userDao.delete(id);
@@ -146,12 +152,6 @@ public class UserServiceImpl implements UserService {
         return userDao.findByEmail(email).orElse(null);
     }
 
-    @Override
-    public List<User> getUsersByRole(String role) {
-        log.debug("Getting users with role: {}", role);
-        String roleName = "ROLE_" + role;
-        return userDao.findByRole(roleName);
-    }
 
     // ========== HELPER METHODS ==========
 
@@ -160,22 +160,20 @@ public class UserServiceImpl implements UserService {
      */
     private void validateUserData(User user) {
         if (user == null) {
-            throw new IllegalArgumentException("User object cannot be null");
+            throw new ValidationException("User object cannot be null");
         }
-        if (user.getEmail() == null || user.getEmail().trim().isEmpty()) {
-            throw new IllegalArgumentException("Email cannot be empty");
-        }
+
         if (user.getPassword() == null || user.getPassword().trim().isEmpty()) {
-            throw new IllegalArgumentException("Password cannot be empty");
+            throw new ValidationException("Password cannot be empty");
         }
         if (user.getFirstName() == null || user.getFirstName().trim().isEmpty()) {
-            throw new IllegalArgumentException("First name cannot be empty");
+            throw new ValidationException("First name cannot be empty");
         }
         if (user.getLastName() == null || user.getLastName().trim().isEmpty()) {
-            throw new IllegalArgumentException("Last name cannot be empty");
+            throw new ValidationException("Last name cannot be empty");
         }
         if (user.getAge() == null || user.getAge() <= 0) {
-            throw new IllegalArgumentException("Age must be positive");
+            throw new ValidationException("Age must be positive");
         }
     }
 
@@ -184,23 +182,24 @@ public class UserServiceImpl implements UserService {
      */
     private void validateId(Long id) {
         if (id == null) {
-            throw new IllegalArgumentException("ID cannot be null");
+            throw new ValidationException("ID cannot be null");
         }
         if (id <= 0) {
-            throw new IllegalArgumentException("ID must be positive");
+            throw new ValidationException("ID must be positive");
         }
     }
 
     /**
      * Checks if email is unique
-     * @param email email to check
+     *
+     * @param email         email to check
      * @param currentUserId current user ID (null for creation)
      */
     private void checkEmailUniqueness(String email, Long currentUserId) {
         userDao.findByEmail(email).ifPresent(existingUser -> {
             if (!existingUser.getId().equals(currentUserId)) {
                 log.warn("Email already in use: {}", email);
-                throw new IllegalArgumentException("Email " + email + " already registered");
+                throw new DuplicatedEmailException(email);
             }
         });
     }
@@ -211,6 +210,5 @@ public class UserServiceImpl implements UserService {
     private boolean isEmailChanged(User existingUser, String newEmail) {
         return newEmail != null && !newEmail.equals(existingUser.getEmail());
     }
-
 
 }

@@ -1,6 +1,7 @@
 package ru.kata.spring.boot_security.demo.entities;
 
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
@@ -36,6 +37,7 @@ public class Role implements GrantedAuthority {
 
     // ✅ Добавляем обратную связь
     @ManyToMany(mappedBy = "roles")  // ссылается на поле roles в классе User
+    @JsonIgnore
     private Set<User> users = new HashSet<>();
 
     public Role(String name) {

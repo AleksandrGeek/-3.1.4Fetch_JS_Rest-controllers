@@ -15,12 +15,11 @@ public interface UserService {
 
     List<User> getAllUsers();
 
-    void updateUser(User user, Set<Long> roleIds);
+    User updateUser(User user, Set<Long> roleIds);
 
     void deleteUser(Long id);
 
     User findByEmail(String email);
 
-    List<User> getUsersByRole(String role);
 }
 
